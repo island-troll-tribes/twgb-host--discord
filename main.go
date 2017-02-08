@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
 	"log"
 	"fmt"
-	"net/http"
+	"os"
+	"os/signal"
 	"database/sql"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -95,8 +95,8 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi!")
-	})
-	panic(http.ListenAndServe(":" + port, nil))
+	// Wait for a signal to quit
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	<-c
 }

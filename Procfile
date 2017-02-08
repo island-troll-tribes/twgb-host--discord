@@ -1,1 +1,1 @@
-web: bin/discord-itt-bot
+worker: bin/discord-itt-bot

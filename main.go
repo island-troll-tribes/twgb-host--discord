@@ -40,6 +40,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer d.Close()
 
 	u, err := d.User("@me")
 	if err != nil {

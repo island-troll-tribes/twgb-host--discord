@@ -16,7 +16,7 @@ func main() {
 	port := os.Getenv("PORT")
 	mysql := os.Getenv("MYSQL")
 
-	db, err := sql.Open("mysql", mysql + "?parseTime=true")
+	db, err := sql.Open("mysql", mysql)
 	if err != nil {
 		panic(err)
 	}

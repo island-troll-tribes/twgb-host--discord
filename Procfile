@@ -1,1 +1,1 @@
-web: bot
+web: .docker_build/discord-itt-bot

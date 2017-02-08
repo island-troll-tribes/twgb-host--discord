@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"fmt"
 	"os"
 	"os/signal"
@@ -13,7 +12,6 @@ import (
 
 func main() {
 	token := os.Getenv("TOKEN")
-	port := os.Getenv("PORT")
 	mysql := os.Getenv("MYSQL")
 
 	db, err := sql.Open("mysql", mysql)
@@ -25,10 +23,6 @@ func main() {
 	err = db.Ping()
 	if err != nil {
 		panic(err)
-	}
-
-	if port == "" {
-		log.Fatal("$PORT must be set")
 	}
 
 	d, err := discordgo.New("Bot " + token)

@@ -1,0 +1,29 @@
+{
+	"ImportPath": "github.com/theQuazz/discord-itt-bot",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/bwmarrin/discordgo",
+			"Comment": "v0.15.0",
+			"Rev": "5835676872d7fa65ee37b32672079c4ede2c1855"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Comment": "v1.1.0-19-gc36f2fe",
+			"Rev": "c36f2fe5c330f0ac404b616b96c438b8616b1aaf"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/nacl/secretbox",
+			"Rev": "22ddb68eccda408bbf17759ac18d3120ce0d4f3f"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/poly1305",
+			"Rev": "22ddb68eccda408bbf17759ac18d3120ce0d4f3f"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
+			"Rev": "22ddb68eccda408bbf17759ac18d3120ce0d4f3f"
+		}
+	]
+}

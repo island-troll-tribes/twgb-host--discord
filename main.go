@@ -1,18 +1,39 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"database/sql"
+	"log"
+	"fmt"
+	"time"
+	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/bwmarrin/discordgo"
 )
 
+type Game struct {
+	Name string
+	Creator string
+	SlotsTaken int
+	SlotsTotal int
+	InProgress bool
+}
+
 func main() {
 	token := os.Getenv("TOKEN")
 	mysql := os.Getenv("MYSQL")
+	defaultChannelID := os.Getenv("DEFAULT_CHANNEL_ID")
+	period, err := strconv.Atoi(os.Getenv("POLLING_PERIOD"))
+	production := os.Getenv("GO_ENV") == "production"
+
+	log := log.New(os.Stderr, "[INFO] ", log.Ldate | log.Ltime | log.Lshortfile)
+	games := map[int]Game{}
+
+	if err != nil {
+		period = 1
+	}
 
 	db, err := sql.Open("mysql", mysql)
 	if err != nil {
@@ -36,56 +57,97 @@ func main() {
 	}
 	defer d.Close()
 
-	u, err := d.User("@me")
-	if err != nil {
-		panic(err)
-	}
+	ticker := time.NewTicker(time.Duration(period) * time.Second)
+	go func() {
+		for {
+			<-ticker.C
 
-	botID := u.ID
-
-	d.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Author.ID == botID {
-			return
-		}
-
-		if m.Content == ".games" {
-			var (
-				game string
-				creator string
-				slotsTaken int
-				slotsTotal int
-				totalGames int
-			)
-
-			rows, err := db.Query("SELECT gamename, creatorname, slotstaken, slotstotal, totalgames FROM gamelist");
-			gameExists := false
+			gameExists := map[int]bool{}
+			rows, err := db.Query("SELECT id, gamename, creatorname, slotstaken, slotstotal, totalgames FROM gamelist")
 			if err != nil {
 				panic(err)
 			}
 			defer rows.Close()
+
 			for rows.Next() {
-				err := rows.Scan(&game, &creator, &slotsTaken, &slotsTotal, &totalGames);
+				var (
+					id, totalGames int
+					msg string
+					game Game
+				)
+
+				err := rows.Scan(&id, &game.Name, &game.Creator, &game.SlotsTaken, &game.SlotsTotal, &totalGames)
 				if err != nil {
 					panic(err)
 				}
-				var format string
-				if totalGames == 0 {
-					format = "Game [%s : %s : %d/%d] is in the lobby"
+				game.InProgress = totalGames == 1
+				gameExists[id] = true
+
+				if _, ok := games[id]; ok {
+					if !games[id].InProgress && game.InProgress {
+						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] :palm_tree:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						if production {
+							d.ChannelMessageSend(defaultChannelID, msg)
+						}
+						log.Print(msg)
+					}
 				} else {
-					format = "Game [%s : %s : %d/%d] is in progress"
+					if game.InProgress {
+						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] :smiley_cat:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						if production {
+							d.ChannelMessageSend(defaultChannelID, msg)
+						}
+						log.Print(msg)
+					} else {
+						msg = fmt.Sprintf("New game [%s : %s : %d/%d] :smiley_cat:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						if production {
+							d.ChannelMessageSend(defaultChannelID, msg)
+						}
+						log.Print(msg)
+					}
 				}
-				msg := fmt.Sprintf(format, game, creator, slotsTaken, slotsTotal)
-				s.ChannelMessageSend(m.ChannelID, msg)
-				gameExists = true
+
+				games[id] = game
 			}
+
 			err = rows.Err()
 			if err != nil {
 				panic(err)
 			}
-			if !gameExists {
-				s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face:")
-			}
 
+			for id, game := range(games) {
+				if !gameExists[id] {
+					msg := fmt.Sprintf("Game over [%s : %s : %d/%d] :fire:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+					if production {
+						d.ChannelMessageSend(defaultChannelID, msg)
+					}
+					log.Print(defaultChannelID, " ", msg)
+				}
+			}
+		}
+	}()
+
+	d.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		if m.Content == ".games" {
+			for _, game := range(games) {
+				var format string
+				if game.InProgress {
+					format = "Game [%s : %s : %d/%d] is in the lobby"
+				} else {
+					format = "Game [%s : %s : %d/%d] is in progress"
+				}
+				msg := fmt.Sprintf(format, game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+				if production {
+					d.ChannelMessageSend(m.ChannelID, msg)
+				}
+				log.Print(m.ChannelID, " ", msg)
+			}
+			if len(games) == 0 {
+				if production {
+					s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face:")
+				}
+				log.Print(m.ChannelID, " 128 ", "No games available :crying_cat_face:")
+			}
 		}
 	})
 

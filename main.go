@@ -122,6 +122,7 @@ func main() {
 						d.ChannelMessageSend(defaultChannelID, msg)
 					}
 					log.Print(defaultChannelID, " ", msg)
+					delete(games, id)
 				}
 			}
 		}

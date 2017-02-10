@@ -24,6 +24,7 @@ type Game struct {
 func main() {
 	token := os.Getenv("TOKEN")
 	mysql := os.Getenv("MYSQL")
+	subscriberRole := os.Getenv("SUBSCRIBER_ROLE")
 	defaultChannelID := os.Getenv("DEFAULT_CHANNEL_ID")
 	period, err := strconv.Atoi(os.Getenv("POLLING_PERIOD"))
 	production := os.Getenv("GO_ENV") == "production"
@@ -161,20 +162,35 @@ func main() {
 				log.Print(err)
 				break
 			}
-			err = s.GuildMemberRoleAdd(channel.GuildID, m.Author.ID, "disciples")
+			err = s.GuildMemberRoleAdd(channel.GuildID, m.Author.ID, subscriberRole)
 			if err != nil {
 				log.Print(err)
+				break
 			}
+			dm, err := s.UserChannelCreate(m.Author.ID)
+			if err != nil {
+				log.Print(err)
+				break
+			}
+			s.ChannelMessageSend(dm.ID, "Successfully subscribed!")
 		case ".unsubscribe":
 			channel, err := s.Channel(m.ChannelID)
 			if err != nil {
 				log.Print(err)
 				break
 			}
-			err = s.GuildMemberRoleRemove(channel.GuildID, m.Author.ID, "disciples")
+			err = s.GuildMemberRoleRemove(channel.GuildID, m.Author.ID, subscriberRole)
 			if err != nil {
 				log.Print(err)
+				break
 			}
+			dm, err := s.UserChannelCreate(m.Author.ID)
+			if err != nil {
+				log.Print(err)
+				break
+			}
+			s.ChannelMessageSend(dm.ID, "Successfully subscribed!")
+
 		}
 	})
 

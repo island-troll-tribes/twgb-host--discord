@@ -138,9 +138,9 @@ func main() {
 			for _, game := range(games) {
 				var format string
 				if game.InProgress {
-					format = "Game [%s : %s : %d/%d] is in the lobby"
-				} else {
 					format = "Game [%s : %s : %d/%d] is in progress"
+				} else {
+					format = "Game [%s : %s : %d/%d] is in the lobby"
 				}
 				msg := fmt.Sprintf(format, game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 				if production {

@@ -1,0 +1,9 @@
+{
+  "name": "TwGB[Host] Discord",
+  "description": "Announces games and stuff",
+  "keywords": [],
+  "image": "heroku/go:1.7",
+  "mount_dir": "src/github.com/theQuazz/twgb-host-discord",
+  "website": "http://github.com/island-troll-tribes/twgb-host-discord",
+  "repository": "http://github.com/island-troll-tribes/twgb-host-discord"
+}

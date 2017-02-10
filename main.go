@@ -86,7 +86,7 @@ func main() {
 
 				if _, ok := games[id]; ok {
 					if !games[id].InProgress && game.InProgress {
-						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] :palm_tree: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] :palm_tree: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
@@ -94,13 +94,13 @@ func main() {
 					}
 				} else {
 					if game.InProgress {
-						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] :smiley_cat: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] :smiley_cat: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
 						log.Print(msg)
 					} else {
-						msg = fmt.Sprintf("New game [%s : %s : %d/%d] :smiley_cat: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("New game [%s : %s : %d/%d] :smiley_cat: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
@@ -120,9 +120,9 @@ func main() {
 				if !gameExists[id] {
 					var msg string
 					if game.InProgress {
-						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] :fire: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] :fire: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
 					} else {
-						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] :dash: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] :dash: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
 					}
 					if production {
 						d.ChannelMessageSend(defaultChannelID, msg)
@@ -140,9 +140,9 @@ func main() {
 			for _, game := range(games) {
 				var format string
 				if game.InProgress {
-					format = "Game [%s : %s : %d/%d] is in progress @disciples"
+					format = "Game [%s : %s : %d/%d] is in progress"
 				} else {
-					format = "Game [%s : %s : %d/%d] is in the lobby @disciples"
+					format = "Game [%s : %s : %d/%d] is in the lobby"
 				}
 				msg := fmt.Sprintf(format, game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 				if production {
@@ -152,9 +152,9 @@ func main() {
 			}
 			if len(games) == 0 {
 				if production {
-					s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face: @disciples")
+					s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face:")
 				}
-				log.Print(m.ChannelID, " 128 ", "No games available :crying_cat_face: @disciples")
+				log.Print(m.ChannelID, " 128 ", "No games available :crying_cat_face:")
 			}
 		case ".subscribe":
 			channel, err := s.Channel(m.ChannelID)
@@ -172,7 +172,7 @@ func main() {
 				log.Print(err)
 				break
 			}
-			s.ChannelMessageSend(dm.ID, "Successfully subscribed!")
+			s.ChannelMessageSend(dm.ID, "Successfully subscribed! :smile:")
 		case ".unsubscribe":
 			channel, err := s.Channel(m.ChannelID)
 			if err != nil {
@@ -189,7 +189,7 @@ func main() {
 				log.Print(err)
 				break
 			}
-			s.ChannelMessageSend(dm.ID, "Successfully subscribed!")
+			s.ChannelMessageSend(dm.ID, "Unsubscribed :cry:")
 
 		}
 	})

@@ -154,7 +154,7 @@ func main() {
 				if production {
 					s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face:")
 				}
-				log.Print(m.ChannelID, " 128 ", "No games available :crying_cat_face:")
+				log.Print(m.ChannelID, " ", "No games available :crying_cat_face:")
 			}
 		case ".subscribe":
 			channel, err := s.Channel(m.ChannelID)
@@ -173,6 +173,7 @@ func main() {
 				break
 			}
 			s.ChannelMessageSend(dm.ID, "Successfully subscribed! :smile:")
+			log.Print(m.Author.ID, " subscribed")
 		case ".unsubscribe":
 			channel, err := s.Channel(m.ChannelID)
 			if err != nil {
@@ -190,7 +191,7 @@ func main() {
 				break
 			}
 			s.ChannelMessageSend(dm.ID, "Unsubscribed :cry:")
-
+			log.Print(m.Author.ID, " unsubscribed")
 		}
 	})
 

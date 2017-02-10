@@ -117,7 +117,12 @@ func main() {
 
 			for id, game := range(games) {
 				if !gameExists[id] {
-					msg := fmt.Sprintf("Game over [%s : %s : %d/%d] :fire:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+					var msg string
+					if game.InProgress {
+						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] :fire:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+					} else {
+						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] :dash:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+					}
 					if production {
 						d.ChannelMessageSend(defaultChannelID, msg)
 					}

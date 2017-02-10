@@ -28,7 +28,7 @@ func main() {
 	period, err := strconv.Atoi(os.Getenv("POLLING_PERIOD"))
 	production := os.Getenv("GO_ENV") == "production"
 
-	log := log.New(os.Stderr, "[INFO] ", log.Ldate | log.Ltime | log.Lshortfile)
+	log := log.New(os.Stderr, "TwGB[HOST] ", log.Ldate | log.Ltime | log.Lshortfile)
 	games := map[int]Game{}
 
 	if err != nil {
@@ -85,7 +85,7 @@ func main() {
 
 				if _, ok := games[id]; ok {
 					if !games[id].InProgress && game.InProgress {
-						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] :palm_tree:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] :palm_tree: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
@@ -93,13 +93,13 @@ func main() {
 					}
 				} else {
 					if game.InProgress {
-						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] :smiley_cat:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] :smiley_cat: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
 						log.Print(msg)
 					} else {
-						msg = fmt.Sprintf("New game [%s : %s : %d/%d] :smiley_cat:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("New game [%s : %s : %d/%d] :smiley_cat: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
@@ -119,9 +119,9 @@ func main() {
 				if !gameExists[id] {
 					var msg string
 					if game.InProgress {
-						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] :fire:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] :fire: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 					} else {
-						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] :dash:", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] :dash: @disciples", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 					}
 					if production {
 						d.ChannelMessageSend(defaultChannelID, msg)
@@ -134,13 +134,14 @@ func main() {
 	}()
 
 	d.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Content == ".games" {
+		switch m.Content {
+		case ".games":
 			for _, game := range(games) {
 				var format string
 				if game.InProgress {
-					format = "Game [%s : %s : %d/%d] is in progress"
+					format = "Game [%s : %s : %d/%d] is in progress @disciples"
 				} else {
-					format = "Game [%s : %s : %d/%d] is in the lobby"
+					format = "Game [%s : %s : %d/%d] is in the lobby @disciples"
 				}
 				msg := fmt.Sprintf(format, game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
 				if production {
@@ -150,9 +151,29 @@ func main() {
 			}
 			if len(games) == 0 {
 				if production {
-					s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face:")
+					s.ChannelMessageSend(m.ChannelID, "No games available :crying_cat_face: @disciples")
 				}
-				log.Print(m.ChannelID, " 128 ", "No games available :crying_cat_face:")
+				log.Print(m.ChannelID, " 128 ", "No games available :crying_cat_face: @disciples")
+			}
+		case ".subscribe":
+			channel, err := s.Channel(m.ChannelID)
+			if err != nil {
+				log.Print(err)
+				break
+			}
+			err = s.GuildMemberRoleAdd(channel.GuildID, m.Author.ID, "disciples")
+			if err != nil {
+				log.Print(err)
+			}
+		case ".unsubscribe":
+			channel, err := s.Channel(m.ChannelID)
+			if err != nil {
+				log.Print(err)
+				break
+			}
+			err = s.GuildMemberRoleRemove(channel.GuildID, m.Author.ID, "disciples")
+			if err != nil {
+				log.Print(err)
 			}
 		}
 	})

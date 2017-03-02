@@ -224,6 +224,7 @@ func main() {
 				panic(err)
 			}
 			defer rows.Close()
+
 			hasRow := false
 			for rows.Next() {
 				err := rows.Scan(&server, &wins, &losses, &games, &score, &category)
@@ -234,12 +235,13 @@ func main() {
 
 				percent := 100.0 * float64(wins) / float64(games)
 				msg := fmt.Sprintf("%s@%s in %s: ELO(%f) W/L(%d/%d, %.2f%%)", name, server, category, score, wins, losses, percent)
-				s.ChannelMessageSend(m.ID, msg)
+				s.ChannelMessageSend(m.ChannelID, msg)
 				log.Print(m.Author.ID, " ", msg)
 			}
 
 			if !hasRow {
-				s.ChannelMessageSend(m.ID, "Player not found!")
+				s.ChannelMessageSend(m.ChannelID, "Player not found!")
+				log.Print(m.Author.ID, " Player not found!")
 			}
 		}
 	})

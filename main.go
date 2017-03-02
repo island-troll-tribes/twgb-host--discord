@@ -208,7 +208,7 @@ func main() {
 			log.Print(m.Author.ID, " unsubscribed")
 		case strings.HasPrefix(m.Content, ".stats"):
 			var name string
-			args := strings.SplitN(m.Content, " ", 2)
+			args := strings.SplitN(m.Content, " ", 3)
 			if len(args) >= 2 {
 				name = args[1]
 			} else {
@@ -234,7 +234,7 @@ func main() {
 				hasRow = true
 
 				percent := 100.0 * float64(wins) / float64(games)
-				msg := fmt.Sprintf("%s@%s in %s: ELO(%f) W/L(%d/%d, %.2f%%)", name, server, category, score, wins, losses, percent)
+				msg := fmt.Sprintf("%s@%s in %s: ELO(%.2f) W/L(%d/%d, %.2f%%)", name, server, category, score, wins, losses, percent)
 				s.ChannelMessageSend(m.ChannelID, msg)
 				log.Print(m.Author.ID, " ", msg)
 			}

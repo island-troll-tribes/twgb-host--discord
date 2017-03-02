@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 	"strconv"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/bwmarrin/discordgo"
@@ -16,9 +17,14 @@ import (
 type Game struct {
 	Name string
 	Creator string
+	Players []string
 	SlotsTaken int
 	SlotsTotal int
 	InProgress bool
+}
+
+func (g *Game) PlayerNames() string {
+	return strings.Join(g.Players, ", ")
 }
 
 func main() {
@@ -64,7 +70,7 @@ func main() {
 			<-ticker.C
 
 			gameExists := map[int]bool{}
-			rows, err := db.Query("SELECT id, gamename, creatorname, slotstaken, slotstotal, totalgames FROM gamelist")
+			rows, err := db.Query("SELECT id, gamename, creatorname, slotstaken, slotstotal, totalgames, usernames FROM gamelist")
 			if err != nil {
 				panic(err)
 			}
@@ -73,20 +79,28 @@ func main() {
 			for rows.Next() {
 				var (
 					id, totalGames int
-					msg string
+					msg, usernames string
 					game Game
 				)
 
-				err := rows.Scan(&id, &game.Name, &game.Creator, &game.SlotsTaken, &game.SlotsTotal, &totalGames)
+				err := rows.Scan(&id, &game.Name, &game.Creator, &game.SlotsTaken, &game.SlotsTotal, &totalGames, &usernames)
 				if err != nil {
 					panic(err)
 				}
 				game.InProgress = totalGames == 1
 				gameExists[id] = true
 
+				parts := strings.Split(usernames, "\t")
+				game.Players = []string{}
+				for i, part := range(parts) {
+					if i % 3 == 0 && part != "" {
+						game.Players = append(game.Players, part)
+					}
+				}
+
 				if _, ok := games[id]; ok {
 					if !games[id].InProgress && game.InProgress {
-						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] :palm_tree: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
+						msg = fmt.Sprintf("Game started [%s : %s : %d/%d] (%s) :palm_tree: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, game.PlayerNames(), subscriberRole)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
@@ -94,13 +108,13 @@ func main() {
 					}
 				} else {
 					if game.InProgress {
-						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] :smiley_cat: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
+						msg = fmt.Sprintf("Game in progress [%s : %s : %d/%d] (%s) :smiley_cat: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, game.PlayerNames(), subscriberRole)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
 						log.Print(msg)
 					} else {
-						msg = fmt.Sprintf("New game [%s : %s : %d/%d] :smiley_cat: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
+						msg = fmt.Sprintf("New game [%s : %s : %d/%d] (%s) :smiley_cat: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, game.PlayerNames(), subscriberRole)
 						if production {
 							d.ChannelMessageSend(defaultChannelID, msg)
 						}
@@ -120,9 +134,9 @@ func main() {
 				if !gameExists[id] {
 					var msg string
 					if game.InProgress {
-						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] :fire: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
+						msg = fmt.Sprintf("Game over [%s : %s : %d/%d] (%s) :fire: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, game.PlayerNames(), subscriberRole)
 					} else {
-						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] :dash: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, subscriberRole)
+						msg = fmt.Sprintf("Lobby ended [%s : %s : %d/%d] (%s) :dash: <@&%s>", game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, game.PlayerNames(), subscriberRole)
 					}
 					if production {
 						d.ChannelMessageSend(defaultChannelID, msg)
@@ -135,16 +149,16 @@ func main() {
 	}()
 
 	d.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		switch m.Content {
-		case ".games":
+		switch {
+		case strings.HasPrefix(m.Content, ".games"):
 			for _, game := range(games) {
 				var format string
 				if game.InProgress {
-					format = "Game [%s : %s : %d/%d] is in progress"
+					format = "Game [%s : %s : %d/%d] (%s) is in progress"
 				} else {
-					format = "Game [%s : %s : %d/%d] is in the lobby"
+					format = "Game [%s : %s : %d/%d] (%s) is in the lobby"
 				}
-				msg := fmt.Sprintf(format, game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal)
+				msg := fmt.Sprintf(format, game.Name, game.Creator, game.SlotsTaken, game.SlotsTotal, game.PlayerNames())
 				if production {
 					d.ChannelMessageSend(m.ChannelID, msg)
 				}
@@ -156,7 +170,7 @@ func main() {
 				}
 				log.Print(m.ChannelID, " ", "No games available :crying_cat_face:")
 			}
-		case ".subscribe":
+		case strings.HasPrefix(m.Content, ".subscribe"):
 			channel, err := s.Channel(m.ChannelID)
 			if err != nil {
 				log.Print(err)
@@ -174,7 +188,7 @@ func main() {
 			}
 			s.ChannelMessageSend(dm.ID, "Successfully subscribed! :smile:")
 			log.Print(m.Author.ID, " subscribed")
-		case ".unsubscribe":
+		case strings.HasPrefix(m.Content, ".unsubscribe"):
 			channel, err := s.Channel(m.ChannelID)
 			if err != nil {
 				log.Print(err)
@@ -192,6 +206,41 @@ func main() {
 			}
 			s.ChannelMessageSend(dm.ID, "Unsubscribed :cry:")
 			log.Print(m.Author.ID, " unsubscribed")
+		case strings.HasPrefix(m.Content, ".stats"):
+			var name string
+			args := strings.SplitN(m.Content, " ", 2)
+			if len(args) >= 2 {
+				name = args[1]
+			} else {
+				name = m.Author.Username
+			}
+
+			var server, category string
+			var wins, losses, games int
+			var score float64
+			query := fmt.Sprintf("SELECT server, wins, losses, games, score, category FROM w3mmd_elo_scores WHERE name=? AND category LIKE '%d%%' AND category LIKE '%%_league'", time.Now().Year())
+			rows, err := db.Query(query, name)
+			if err != nil {
+				panic(err)
+			}
+			defer rows.Close()
+			hasRow := false
+			for rows.Next() {
+				err := rows.Scan(&server, &wins, &losses, &games, &score, &category)
+				if err != nil {
+					panic(err)
+				}
+				hasRow = true
+
+				percent := 100.0 * float64(wins) / float64(games)
+				msg := fmt.Sprintf("%s@%s in %s: ELO(%f) W/L(%d/%d, %.2f%%)", name, server, category, score, wins, losses, percent)
+				s.ChannelMessageSend(m.ID, msg)
+				log.Print(m.Author.ID, " ", msg)
+			}
+
+			if !hasRow {
+				s.ChannelMessageSend(m.ID, "Player not found!")
+			}
 		}
 	})
 

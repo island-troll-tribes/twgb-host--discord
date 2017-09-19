@@ -218,7 +218,7 @@ func main() {
 			var server, category string
 			var wins, losses, games int
 			var score float64
-			query := fmt.Sprintf("SELECT server, wins, losses, games, score, category FROM w3mmd_elo_scores WHERE name=? AND category LIKE '%d%%' AND category LIKE '%%_league'", time.Now().Year())
+			query := fmt.Sprintf("SELECT server, wins, losses, games, score, category FROM w3mmd_elo_scores WHERE name=? AND ((category LIKE '%d%%' AND category LIKE '%%_league') OR category = 'practice')", time.Now().Year())
 			rows, err := db.Query(query, name)
 			if err != nil {
 				panic(err)

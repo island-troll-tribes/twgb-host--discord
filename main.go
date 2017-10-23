@@ -151,6 +151,13 @@ func main() {
 	d.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		switch {
 		case strings.HasPrefix(m.Content, ".games"):
+			if m.ChannelID != defaultChannelID {
+			  msg := fmt.Sprintf("Please use the <#%s> channel for `.games` commands. Send `.subscribe` to get notified when new lobbies open.", defaultChannelID);
+			  log.Print(m.ChannelID, " ", msg)
+			  d.ChannelMessageSend(m.ChannelID, msg)
+			  return
+			}
+
 			for _, game := range(games) {
 				var format string
 				if game.InProgress {
